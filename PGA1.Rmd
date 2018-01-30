@@ -1,0 +1,38 @@
+---
+title: "Populations of Washington State Counties"
+author: "Daniel Brusic"
+date: "January 30, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Below is a map of Washington State counties and their total populations according to the U.S. Census Bureau's 2010 decennial census. The data was obtained from the [fact finder](https://factfinder.census.gov/faces/nav/jsf/pages/index.xhtml) website for the census. Help in creating this map was obtained from leaflet's tutorial [website](https://rstudio.github.io/leaflet/json.html) through github, and from this May 2015 [blog](http://www.gis-blog.com/create-a-leaflet-map-using-r/) post. Scrolling over the map with the cursor displays pop-up labels with county names and total populations, as measured in the 2010 census.
+
+```{r, message=FALSE}
+library(leaflet)
+library(raster)
+```
+
+```{r}
+countyPop = read.csv("censusPop2010.csv", skip=1, stringsAsFactors = FALSE)
+# use raster package to download spatial polygon data for all U.S. counties
+usa <- getData("GADM", country="USA", level=2)
+usa$pop[usa$NAME_1 == "Washington"] = countyPop$Total
+pal = colorNumeric("YlOrRd", NULL)
+leaflet(usa[usa$NAME_1 == "Washington",]) %>%
+        setView(-120.169, 47.706, zoom = 6) %>%
+        addProviderTiles("CartoDB.Positron") %>%
+        addPolygons(fillColor = ~pal(pop),
+                    label = ~paste0(NAME_2, ": ", formatC(pop, big.mark = ",")),
+                    fillOpacity = 1,
+                    weight = 2,
+                    color = "black",
+                    highlightOptions = highlightOptions(color = "white", 
+                                                        weight = 4,
+                                                        bringToFront = TRUE)
+        ) %>%
+        addLegend(pal = pal, values = ~pop, opacity = 1, title = "Population")
+```
